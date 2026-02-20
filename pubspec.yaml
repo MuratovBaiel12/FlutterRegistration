@@ -1,0 +1,39 @@
+name: flutter_auth_app
+description: "Профессиональный шаблон авторизации на Flutter"
+
+# Версия сборки приложения (как в package.json)
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0' # Указываем актуальную версию Dart
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Иконки в стиле iOS (стандарт для новых проектов)
+  cupertino_icons: ^1.0.6
+
+  # Библиотека для работы с вебом (уже в SDK, но Flutter поймет обращение)
+  flutter_web_plugins:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Линтер — это «полиция кода». Помогает писать как профи
+  flutter_lints: ^3.0.0
+
+flutter:
+  # Этот флаг позволяет использовать Material Design 3 и иконки
+  uses-material-design: true
+
+  # Если захочешь добавить свои шрифты или картинки, раскомментируй ниже:
+  # assets:
+  #   - assets/images/logo.png
+
+  # fonts:
+  #   - family: MyCustomFont
+  #     fonts:
+  #       - asset: assets/fonts/MyFont-Regular.ttf
