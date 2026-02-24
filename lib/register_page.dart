@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'auth_shell.dart';
+import 'services/api_connect.dart';
+import 'services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -10,45 +14,127 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // 1. Контроллеры для получения текста (как value в JS)
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
-  // 2. Ключ для валидации всей формы
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
 
-  // Переменная для скрытия/показа пароля
   bool _showPasswords = false;
+  bool _isSubmitting = false;
+  String? _statusMessage;
+  bool _statusIsError = false;
 
   @override
   void dispose() {
-    // Обязательно очищаем контроллеры, чтобы не было утечек памяти
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _authService.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
-    // Аналог preventDefault() и проверки валидности в JS
-    if (_formKey.currentState!.validate()) {
-      // Здесь вызываем API (например, Firebase или твой Backend)
-      debugPrint("Регистрация пользователя: ${_emailController.text}");
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Регистрация прошла успешно!')),
+  String? _validateEmail(String? value) {
+    final email = (value ?? '').trim();
+    if (email.isEmpty) {
+      return 'Введите email';
+    }
+
+    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    if (!emailPattern.hasMatch(email)) {
+      return 'Введите корректный email';
+    }
+
+    return null;
+  }
+
+  Future<void> _submitForm() async {
+    FocusScope.of(context).unfocus();
+
+    if (_isSubmitting) {
+      return;
+    }
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _statusMessage = null;
+      _statusIsError = false;
+    });
+
+    try {
+      final result = await _authService.register(
+        email: _emailController.text,
+        password: _passwordController.text,
       );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _statusMessage = result.message;
+        _statusIsError = !result.success;
+      });
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor:
+                result.success ? null : Theme.of(context).colorScheme.error,
+          ),
+        );
+
+      if (result.success) {
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+      }
+    } on TimeoutException {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _statusMessage = 'Сервер не отвечает. Попробуйте позже';
+        _statusIsError = true;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _statusMessage = error.message;
+        _statusIsError = true;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _statusMessage = 'Не удалось выполнить регистрацию';
+        _statusIsError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AuthShell(
       title: 'Создать аккаунт',
-      subtitle: 'Заполните данные — это займёт меньше минуты.',
+      subtitle: 'Заполните данные — это займет меньше минуты.',
       footer: TextButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
         child: const Text('Уже есть аккаунт? Войти'),
       ),
       child: AutofillGroup(
@@ -58,8 +144,48 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_statusMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (_statusIsError
+                            ? colorScheme.errorContainer
+                            : colorScheme.primaryContainer)
+                        .withValues(alpha: 120),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (_statusIsError
+                              ? colorScheme.error
+                              : colorScheme.primary)
+                          .withValues(alpha: 90),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        _statusIsError
+                            ? Icons.error_outline
+                            : Icons.check_circle_outline,
+                        color: _statusIsError
+                            ? colorScheme.error
+                            : colorScheme.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _statusMessage!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _emailController,
+                enabled: !_isSubmitting,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
@@ -67,17 +193,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   labelText: 'Email',
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
-                validator: (value) {
-                  final email = (value ?? '').trim();
-                  if (!email.contains('@') || email.length < 5) {
-                    return 'Введите корректный email';
-                  }
-                  return null;
-                },
+                validator: _validateEmail,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
+                enabled: !_isSubmitting,
                 obscureText: !_showPasswords,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.newPassword],
@@ -85,11 +206,15 @@ class _RegisterPageState extends State<RegisterPage> {
                   labelText: 'Пароль',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    tooltip: _showPasswords ? 'Скрыть пароль' : 'Показать пароль',
+                    tooltip:
+                        _showPasswords ? 'Скрыть пароль' : 'Показать пароль',
                     icon: Icon(
                       _showPasswords ? Icons.visibility_off : Icons.visibility,
                     ),
-                    onPressed: () => setState(() => _showPasswords = !_showPasswords),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () =>
+                            setState(() => _showPasswords = !_showPasswords),
                   ),
                 ),
                 validator: (value) {
@@ -103,6 +228,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _confirmPasswordController,
+                enabled: !_isSubmitting,
                 obscureText: !_showPasswords,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.newPassword],
@@ -123,8 +249,14 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _submitForm,
-                child: const Text('Зарегистрироваться'),
+                onPressed: _isSubmitting ? null : _submitForm,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Зарегистрироваться'),
               ),
             ],
           ),

@@ -17,6 +17,7 @@ dependencies:
   # Библиотека для работы с вебом (уже в SDK, но Flutter поймет обращение)
   flutter_web_plugins:
     sdk: flutter
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
