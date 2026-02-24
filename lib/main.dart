@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 // 1. Импортируем библиотеку для работы с URL (только для Web)
 import 'package:flutter_web_plugins/url_strategy.dart';
 
-import 'register_page.dart'; 
+import 'register_page.dart';
 
 void main() {
-  // 2. Вызываем эту функцию ПЕРЕД runApp. 
+  // 2. Вызываем эту функцию ПЕРЕД runApp.
   // Она переключает движок с Hash (#) на Path-стратегию.
-  usePathUrlStrategy(); 
-  
+  usePathUrlStrategy();
+
   runApp(const MyApp());
 }
 
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Auth Demo',
+      title: 'Flutter Auth Demo2',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -55,6 +55,7 @@ class ForgotPasswordPage extends StatelessWidget {
   const ForgotPasswordPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(), body: const Center(child: Text('Forgot Password')));
+    return Scaffold(
+        appBar: AppBar(), body: const Center(child: Text('Forgot Password')));
   }
 }
