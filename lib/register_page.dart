@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'auth_shell.dart';
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -17,7 +19,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Переменная для скрытия/показа пароля
-  bool _isPasswordVisible = false;
+  bool _showPasswords = false;
 
   @override
   void dispose() {
@@ -32,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
     // Аналог preventDefault() и проверки валидности в JS
     if (_formKey.currentState!.validate()) {
       // Здесь вызываем API (например, Firebase или твой Backend)
-      print("Регистрация пользователя: ${_emailController.text}");
+      debugPrint("Регистрация пользователя: ${_emailController.text}");
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Регистрация прошла успешно!')),
@@ -42,99 +44,89 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Создать аккаунт')),
-      body: SafeArea(
-        child: SingleChildScrollView( // Чтобы клавиатура не перекрывала поля (как overflow-y: auto)
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Добро пожаловать!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return AuthShell(
+      title: 'Создать аккаунт',
+      subtitle: 'Заполните данные — это займёт меньше минуты.',
+      footer: TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Уже есть аккаунт? Войти'),
+      ),
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
-                const SizedBox(height: 32),
-
-                // Поле Email
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || !value.contains('@')) {
-                      return 'Введите корректный email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Пароль
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Пароль',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                validator: (value) {
+                  final email = (value ?? '').trim();
+                  if (!email.contains('@') || email.length < 5) {
+                    return 'Введите корректный email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_showPasswords,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: InputDecoration(
+                  labelText: 'Пароль',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    tooltip: _showPasswords ? 'Скрыть пароль' : 'Показать пароль',
+                    icon: Icon(
+                      _showPasswords ? Icons.visibility_off : Icons.visibility,
                     ),
+                    onPressed: () => setState(() => _showPasswords = !_showPasswords),
                   ),
-                  validator: (value) {
-                    if (value == null || value.length < 6) {
-                      return 'Минимум 6 символов';
-                    }
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 16),
-
-                // Поле Подтверждение пароля
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Повторите пароль',
-                    prefixIcon: Icon(Icons.lock_reset),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value != _passwordController.text) {
-                      return 'Пароли не совпадают';
-                    }
-                    return null;
-                  },
+                validator: (value) {
+                  final password = value ?? '';
+                  if (password.length < 6) {
+                    return 'Минимум 6 символов';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: !_showPasswords,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: const InputDecoration(
+                  labelText: 'Повторите пароль',
+                  prefixIcon: Icon(Icons.lock_reset),
                 ),
-                const SizedBox(height: 32),
-
-                // Кнопка регистрации
-                ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text('Зарегистрироваться', style: TextStyle(fontSize: 16)),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Ссылка на вход (если уже есть аккаунт)
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Уже есть аккаунт? Войти'),
-                ),
-              ],
-            ),
+                onFieldSubmitted: (_) => _submitForm(),
+                validator: (value) {
+                  if ((value ?? '').isEmpty) {
+                    return 'Повторите пароль';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Пароли не совпадают';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _submitForm,
+                child: const Text('Зарегистрироваться'),
+              ),
+            ],
           ),
         ),
       ),
