@@ -25,7 +25,7 @@ class ApiConnect {
 
   // Укажите папку, где лежат PHP endpoints (НЕ файл db.php).
   // Пример: https://example.com/api
-  static const String baseUrl = 'https://flreg/api';
+  static const String baseUrl = 'https://films.pladzuma.com/api';
 
   Uri buildUri(String path) {
     final normalizedBase = baseUrl.endsWith('/')
