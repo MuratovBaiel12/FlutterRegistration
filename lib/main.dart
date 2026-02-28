@@ -1,17 +1,29 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'auth_shell.dart';
+import 'features/movie_bookmarks/data/datasources/movie_local_datasource.dart';
+import 'features/movie_bookmarks/data/models/movie_model.dart';
 import 'home.dart';
 import 'register_page.dart';
 import 'services/api_connect.dart';
 import 'services/auth_service.dart';
 import 'url_strategy.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy();
-  runApp(const MyApp());
+
+  await Hive.initFlutter();
+  if (!Hive.isAdapterRegistered(10)) {
+    Hive.registerAdapter(MovieModelAdapter());
+  }
+  await Hive.openBox<MovieModel>(MovieLocalDataSource.boxName);
+
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

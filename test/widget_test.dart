@@ -14,9 +14,9 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Страница Входа'), findsOneWidget);
+    expect(find.text('Вход в аккаунт'), findsOneWidget);
 
-    await tester.tap(find.text('Перейти к регистрации'));
+    await tester.tap(find.text('Нет аккаунта? Зарегистрироваться'));
     await tester.pumpAndSettle();
 
     expect(find.text('Создать аккаунт'), findsOneWidget);

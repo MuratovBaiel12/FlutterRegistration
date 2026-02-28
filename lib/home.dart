@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'features/movie_bookmarks/presentation/pages/movie_bookmarks_page.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -82,6 +84,20 @@ class HomePage extends StatelessWidget {
                           ),
                         ],
                         const SizedBox(height: 20),
+                        Semantics(
+                          label: 'Open movie bookmarks',
+                          button: true,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MovieBookmarksPage.route(),
+                              );
+                            },
+                            icon: const Icon(Icons.bookmark_outline),
+                            label: const Text('Movie bookmarks'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         FilledButton.icon(
                           onPressed: () {
                             Navigator.pushNamedAndRemoveUntil(
