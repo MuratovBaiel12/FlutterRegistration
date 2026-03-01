@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../services/auth_session.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/movie.dart';
 import '../widgets/movie_cover_image.dart';
@@ -27,7 +28,11 @@ class _MovieBookmarksPageState extends ConsumerState<MovieBookmarksPage> {
     super.initState();
     _searchController.text = ref.read(movieSearchQueryProvider);
     _searchController.addListener(() {
-      ref.read(movieSearchQueryProvider.notifier).state = _searchController.text;
+      ref.read(movieSearchQueryProvider.notifier).state =
+          _searchController.text;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncCurrentAccountMovies();
     });
   }
 
@@ -41,6 +46,18 @@ class _MovieBookmarksPageState extends ConsumerState<MovieBookmarksPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(error.toString())));
+  }
+
+  Future<void> _syncCurrentAccountMovies() async {
+    try {
+      await ref.read(movieServiceProvider).syncCurrentAccountMovies();
+    } on StateError {
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    } on Object catch (e) {
+      if (!mounted) return;
+      _showError(context, e);
+    }
   }
 
   List<String> _titleCandidatesFromLines(List<String> lines) {
@@ -174,6 +191,27 @@ class _MovieBookmarksPageState extends ConsumerState<MovieBookmarksPage> {
       appBar: AppBar(
         title: const Text('Movie bookmarks'),
         actions: [
+          Semantics(
+            label: 'Log out',
+            button: true,
+            child: IconButton(
+              tooltip: 'Log out',
+              onPressed: () async {
+                try {
+                  await ref.read(movieServiceProvider).clearLocalMovies();
+                } catch (_) {
+                  // Ignore cache cleanup errors during logout.
+                }
+                AuthSession.clear();
+                if (!context.mounted) return;
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login',
+                  (route) => false,
+                );
+              },
+              icon: const Icon(Icons.logout),
+            ),
+          ),
           Semantics(
             label: 'Scan screenshot and add movie',
             button: true,

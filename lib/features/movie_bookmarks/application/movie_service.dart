@@ -21,6 +21,10 @@ class MovieService {
     });
   }
 
+  Future<void> syncCurrentAccountMovies() async {
+    await _repository.syncCurrentAccountMovies();
+  }
+
   Future<void> addMovie({
     required String title,
     required String description,
@@ -70,6 +74,10 @@ class MovieService {
 
   Future<void> deleteMovie(String id) async {
     await _repository.deleteMovie(id);
+  }
+
+  Future<void> clearLocalMovies() async {
+    await _repository.clearLocalMovies();
   }
 }
 
@@ -124,6 +132,17 @@ List<String> _validateTags(List<String> tags) {
 
 String? _validateOptionalPathOrUrl(String? value) {
   final trimmed = (value ?? '').trim();
-  return trimmed.isEmpty ? null : trimmed;
-}
+  if (trimmed.isEmpty) return null;
 
+  final uri = Uri.tryParse(trimmed);
+  final scheme = uri?.scheme.toLowerCase();
+  if (uri == null || (scheme != 'http' && scheme != 'https')) {
+    throw ArgumentError.value(
+      value,
+      'coverImagePath',
+      'must be a full online URL (http/https)',
+    );
+  }
+
+  return trimmed;
+}

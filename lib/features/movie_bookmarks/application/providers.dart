@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/datasources/movie_local_datasource.dart';
+import '../data/datasources/movie_remote_datasource.dart';
 import '../data/repositories/movie_repository_impl.dart';
 import '../domain/entities/movie.dart';
 import '../domain/repositories/movie_repository.dart';
@@ -13,9 +14,16 @@ final uuidProvider = Provider<Uuid>((ref) => const Uuid());
 final movieLocalDataSourceProvider =
     Provider<MovieLocalDataSource>((ref) => MovieLocalDataSource());
 
+final movieRemoteDataSourceProvider = Provider<MovieRemoteDataSource>((ref) {
+  final dataSource = MovieRemoteDataSource();
+  ref.onDispose(dataSource.dispose);
+  return dataSource;
+});
+
 final movieRepositoryProvider = Provider<MovieRepository>(
   (ref) => MovieRepositoryImpl(
     localDataSource: ref.watch(movieLocalDataSourceProvider),
+    remoteDataSource: ref.watch(movieRemoteDataSourceProvider),
   ),
 );
 

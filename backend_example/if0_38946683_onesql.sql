@@ -35,6 +35,22 @@ CREATE TABLE `accounts` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
+-- РЎС‚СЂСѓРєС‚СѓСЂР° С‚Р°Р±Р»РёС†С‹ `marks`
+--
+
+CREATE TABLE `marks` (
+  `id` int(11) NOT NULL,
+  `account_id` int(11) NOT NULL,
+  `cover_image` varchar(2048) DEFAULT NULL,
+  `title` varchar(120) NOT NULL,
+  `description` text NOT NULL,
+  `notes` text DEFAULT NULL,
+  `tags` varchar(1000) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
 -- Дамп данных таблицы `accounts`
 --
 
@@ -52,6 +68,13 @@ ALTER TABLE `accounts`
   ADD PRIMARY KEY (`id`);
 
 --
+-- РРЅРґРµРєСЃС‹ С‚Р°Р±Р»РёС†С‹ `marks`
+--
+ALTER TABLE `marks`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_marks_account_id` (`account_id`);
+
+--
 -- AUTO_INCREMENT для сохранённых таблиц
 --
 
@@ -60,6 +83,12 @@ ALTER TABLE `accounts`
 --
 ALTER TABLE `accounts`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT РґР»СЏ С‚Р°Р±Р»РёС†С‹ `marks`
+--
+ALTER TABLE `marks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

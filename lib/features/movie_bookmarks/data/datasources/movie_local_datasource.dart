@@ -12,7 +12,8 @@ class MovieLocalDataSource {
       }
       return await Hive.openBox<MovieModel>(boxName);
     } catch (e) {
-      throw MovieLocalDataSourceException('Failed to open Hive box: $boxName', e);
+      throw MovieLocalDataSourceException(
+          'Failed to open Hive box: $boxName', e);
     }
   }
 
@@ -52,6 +53,44 @@ class MovieLocalDataSource {
       throw MovieLocalDataSourceException('Failed to delete movie', e);
     }
   }
+
+  Future<void> replaceAll(List<MovieModel> models) async {
+    try {
+      final box = await _box();
+      await box.clear();
+      if (models.isEmpty) {
+        return;
+      }
+
+      final entries = <String, MovieModel>{};
+      for (final model in models) {
+        entries[model.id] = model;
+      }
+      await box.putAll(entries);
+    } catch (e) {
+      throw MovieLocalDataSourceException('Failed to replace movies', e);
+    }
+  }
+
+  Future<void> clearAll() async {
+    try {
+      final box = await _box();
+      await box.clear();
+    } catch (e) {
+      throw MovieLocalDataSourceException('Failed to clear movies', e);
+    }
+  }
+
+  static Future<void> clearBox() async {
+    try {
+      final box = Hive.isBoxOpen(boxName)
+          ? Hive.box<MovieModel>(boxName)
+          : await Hive.openBox<MovieModel>(boxName);
+      await box.clear();
+    } catch (e) {
+      throw MovieLocalDataSourceException('Failed to clear Hive box', e);
+    }
+  }
 }
 
 class MovieLocalDataSourceException implements Exception {
@@ -63,4 +102,3 @@ class MovieLocalDataSourceException implements Exception {
   @override
   String toString() => 'MovieLocalDataSourceException($message, $cause)';
 }
-

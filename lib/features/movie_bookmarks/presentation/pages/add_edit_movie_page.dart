@@ -72,18 +72,6 @@ class _AddEditMoviePageState extends ConsumerState<AddEditMoviePage> {
       ..showSnackBar(SnackBar(content: Text(error.toString())));
   }
 
-  Future<void> _pickFromGallery() async {
-    try {
-      final picked = await _picker.pickImage(source: ImageSource.gallery);
-      if (picked == null) return;
-      setState(() {
-        _coverController.text = picked.path;
-      });
-    } catch (e) {
-      _showError(e);
-    }
-  }
-
   List<String> _titleCandidatesFromLines(List<String> lines) {
     final normalized = <String>[];
     for (final raw in lines) {
@@ -261,18 +249,20 @@ class _AddEditMoviePageState extends ConsumerState<AddEditMoviePage> {
                       controller: _coverController,
                       maxLines: 2,
                       decoration: const InputDecoration(
-                        labelText: 'Cover image path or URL (optional)',
+                        labelText: 'Cover image URL (optional)',
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Semantics(
-                    label: 'Pick cover image from gallery',
-                    button: true,
-                    child: IconButton(
-                      onPressed: _pickFromGallery,
-                      tooltip: 'Pick from gallery',
-                      icon: const Icon(Icons.photo_library_outlined),
+                      validator: (v) {
+                        final t = (v ?? '').trim();
+                        if (t.isEmpty) return null;
+
+                        final uri = Uri.tryParse(t);
+                        final scheme = uri?.scheme.toLowerCase();
+                        if (uri == null ||
+                            (scheme != 'http' && scheme != 'https')) {
+                          return 'Enter full online URL (http/https)';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   Semantics(

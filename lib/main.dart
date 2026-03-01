@@ -10,6 +10,7 @@ import 'features/movie_bookmarks/data/models/movie_model.dart';
 import 'home.dart';
 import 'register_page.dart';
 import 'services/api_connect.dart';
+import 'services/auth_session.dart';
 import 'services/auth_service.dart';
 import 'url_strategy.dart';
 
@@ -207,6 +208,29 @@ class _LoginPageState extends State<LoginPage> {
 
       final loggedInEmail =
           result.raw['email']?.toString() ?? _emailController.text.trim();
+      final loggedInUserId = int.tryParse(
+        result.raw['user_id']?.toString() ??
+            result.raw['account_id']?.toString() ??
+            result.raw['id']?.toString() ??
+            '',
+      );
+
+      if (loggedInUserId == null || loggedInUserId <= 0) {
+        setState(() {
+          _statusMessage = 'Не удалось определить ID аккаунта';
+          _statusIsError = true;
+        });
+        return;
+      }
+
+      AuthSession.set(
+        accountId: loggedInUserId,
+        email: loggedInEmail,
+      );
+      await MovieLocalDataSource.clearBox();
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -223,7 +247,6 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacementNamed(
         context,
         '/home',
-        arguments: {'email': loggedInEmail},
       );
     } on TimeoutException {
       if (!mounted) {
