@@ -40,9 +40,10 @@ class MyApp extends StatelessWidget {
     );
 
     final colorScheme = base.colorScheme;
+    // 6-digit HEX colors (#RRGGBB).
     final fillColor = brightness == Brightness.light
-        ? colorScheme.surfaceContainerHighest.withValues(alpha: 140)
-        : colorScheme.surfaceContainerHighest.withValues(alpha: 64);
+        ? const Color(0x90F1F5F9).withValues(alpha: 140 / 255)
+        : const Color(0x001F2633);
 
     return base.copyWith(
       scaffoldBackgroundColor: colorScheme.surface,

@@ -9,12 +9,28 @@ import '../widgets/movie_cover_image.dart';
 class AddEditMoviePage extends ConsumerStatefulWidget {
   final Movie? movie;
   final String? prefillTitle;
+  final String? prefillDescription;
+  final String? prefillCoverImageUrl;
 
-  const AddEditMoviePage({super.key, this.movie, this.prefillTitle});
+  const AddEditMoviePage({
+    super.key,
+    this.movie,
+    this.prefillTitle,
+    this.prefillDescription,
+    this.prefillCoverImageUrl,
+  });
 
-  static Route<void> routeAdd({String? prefillTitle}) {
+  static Route<void> routeAdd({
+    String? prefillTitle,
+    String? prefillDescription,
+    String? prefillCoverImageUrl,
+  }) {
     return MaterialPageRoute(
-      builder: (_) => AddEditMoviePage(prefillTitle: prefillTitle),
+      builder: (_) => AddEditMoviePage(
+        prefillTitle: prefillTitle,
+        prefillDescription: prefillDescription,
+        prefillCoverImageUrl: prefillCoverImageUrl,
+      ),
     );
   }
 
@@ -51,8 +67,20 @@ class _AddEditMoviePageState extends ConsumerState<AddEditMoviePage> {
       _notesController.text = movie.notes ?? '';
       _coverController.text = movie.coverImagePath ?? '';
       _tags.addAll(movie.tags);
-    } else if ((widget.prefillTitle ?? '').trim().isNotEmpty) {
-      _titleController.text = widget.prefillTitle!.trim();
+    } else {
+      final prefillTitle = (widget.prefillTitle ?? '').trim();
+      final prefillDescription = (widget.prefillDescription ?? '').trim();
+      final prefillCoverImageUrl = (widget.prefillCoverImageUrl ?? '').trim();
+
+      if (prefillTitle.isNotEmpty) {
+        _titleController.text = prefillTitle;
+      }
+      if (prefillDescription.isNotEmpty) {
+        _descriptionController.text = prefillDescription;
+      }
+      if (prefillCoverImageUrl.isNotEmpty) {
+        _coverController.text = prefillCoverImageUrl;
+      }
     }
   }
 

@@ -6,6 +6,7 @@ import '../data/datasources/movie_remote_datasource.dart';
 import '../data/repositories/movie_repository_impl.dart';
 import '../domain/entities/movie.dart';
 import '../domain/repositories/movie_repository.dart';
+import 'movie_ai_service.dart';
 import 'movie_service.dart';
 import 'movie_screenshot_service.dart';
 
@@ -36,6 +37,18 @@ final movieServiceProvider = Provider<MovieService>(
 
 final movieScreenshotServiceProvider = Provider<MovieScreenshotService>((ref) {
   final service = createMovieScreenshotService();
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final movieAiServiceProvider = Provider<MovieAiService>((ref) {
+  final service = MovieAiService(
+    apiKey: const String.fromEnvironment(
+      'GEMINI_API_KEY',
+      defaultValue: 'AIzaSyCJYC4rB1pCuBe7FLTI-Y2kka-_Xo0vD4Y',
+    ),
+    model: 'gemini-2.5-flash',
+  );
   ref.onDispose(service.dispose);
   return service;
 });
