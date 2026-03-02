@@ -10,6 +10,7 @@ class AddEditMoviePage extends ConsumerStatefulWidget {
   final Movie? movie;
   final String? prefillTitle;
   final String? prefillDescription;
+  final String? prefillMovieUrl;
   final String? prefillCoverImageUrl;
 
   const AddEditMoviePage({
@@ -17,18 +18,21 @@ class AddEditMoviePage extends ConsumerStatefulWidget {
     this.movie,
     this.prefillTitle,
     this.prefillDescription,
+    this.prefillMovieUrl,
     this.prefillCoverImageUrl,
   });
 
   static Route<void> routeAdd({
     String? prefillTitle,
     String? prefillDescription,
+    String? prefillMovieUrl,
     String? prefillCoverImageUrl,
   }) {
     return MaterialPageRoute(
       builder: (_) => AddEditMoviePage(
         prefillTitle: prefillTitle,
         prefillDescription: prefillDescription,
+        prefillMovieUrl: prefillMovieUrl,
         prefillCoverImageUrl: prefillCoverImageUrl,
       ),
     );
@@ -70,6 +74,7 @@ class _AddEditMoviePageState extends ConsumerState<AddEditMoviePage> {
     } else {
       final prefillTitle = (widget.prefillTitle ?? '').trim();
       final prefillDescription = (widget.prefillDescription ?? '').trim();
+      final prefillMovieUrl = (widget.prefillMovieUrl ?? '').trim();
       final prefillCoverImageUrl = (widget.prefillCoverImageUrl ?? '').trim();
 
       if (prefillTitle.isNotEmpty) {
@@ -77,6 +82,9 @@ class _AddEditMoviePageState extends ConsumerState<AddEditMoviePage> {
       }
       if (prefillDescription.isNotEmpty) {
         _descriptionController.text = prefillDescription;
+      }
+      if (prefillMovieUrl.isNotEmpty) {
+        _notesController.text = prefillMovieUrl;
       }
       if (prefillCoverImageUrl.isNotEmpty) {
         _coverController.text = prefillCoverImageUrl;
@@ -340,15 +348,21 @@ class _AddEditMoviePageState extends ConsumerState<AddEditMoviePage> {
               TextFormField(
                 controller: _notesController,
                 maxLength: 1000,
-                minLines: 2,
-                maxLines: 6,
-                textInputAction: TextInputAction.newline,
+                minLines: 1,
+                maxLines: 2,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
+                  labelText: 'Movie URL (optional)',
                 ),
                 validator: (v) {
                   final t = (v ?? '').trim();
+                  if (t.isEmpty) return null;
                   if (t.length > 1000) return 'Max 1000 chars';
+                  final uri = Uri.tryParse(t);
+                  final scheme = uri?.scheme.toLowerCase();
+                  if (uri == null || (scheme != 'http' && scheme != 'https')) {
+                    return 'Enter full movie URL (http/https)';
+                  }
                   return null;
                 },
               ),

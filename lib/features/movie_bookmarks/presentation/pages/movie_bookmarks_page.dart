@@ -178,6 +178,7 @@ class _MovieBookmarksPageState extends ConsumerState<MovieBookmarksPage> {
         AddEditMoviePage.routeAdd(
           prefillTitle: suggestion.title,
           prefillDescription: suggestion.description,
+          prefillMovieUrl: suggestion.movieUrl,
           prefillCoverImageUrl: suggestion.coverImageUrl,
         ),
       );
