@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'auth_shell.dart';
+import 'features/media_scanner/presentation/pages/media_scanner_page.dart';
 import 'features/movie_bookmarks/data/datasources/movie_local_datasource.dart';
 import 'features/movie_bookmarks/data/models/movie_model.dart';
 import 'home.dart';
@@ -102,6 +103,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterPage(),
         '/forgot-password': (context) => const ForgotPasswordPage(),
         '/home': (context) => const HomePage(),
+        '/scanner': (context) => const MediaScannerPage(),
       },
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../services/auth_session.dart';
+import '../../../../widgets/app_logo.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/movie.dart';
 import '../widgets/movie_cover_image.dart';
@@ -401,6 +402,68 @@ class _MovieBookmarksPageState extends ConsumerState<MovieBookmarksPage> {
     return Scaffold(
       backgroundColor: _pageBackground,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            AppLogo(size: 22),
+            SizedBox(width: 10),
+            Text('Закладки'),
+          ],
+        ),
+        actions: [
+          Semantics(
+            label: 'Scan screenshot and add movie',
+            button: true,
+            child: IconButton(
+              tooltip: 'Scan screenshot',
+              onPressed: _scanScreenshotAndAdd,
+              icon: const Icon(Icons.document_scanner_outlined),
+            ),
+          ),
+          Semantics(
+            label: 'Change sorting',
+            button: true,
+            child: PopupMenuButton<MovieSortOption>(
+              tooltip: 'Sort',
+              initialValue: sort,
+              onSelected: (value) =>
+                  ref.read(movieSortOptionProvider.notifier).state = value,
+              itemBuilder: (context) => [
+                _sortMenuItem(
+                  value: MovieSortOption.updatedAtDesc,
+                  label: 'Recently updated',
+                ),
+                _sortMenuItem(
+                  value: MovieSortOption.createdAtDesc,
+                  label: 'Recently added',
+                ),
+                _sortMenuItem(
+                  value: MovieSortOption.titleAsc,
+                  label: 'Title A–Z',
+                ),
+                _sortMenuItem(
+                  value: MovieSortOption.titleDesc,
+                  label: 'Title Z–A',
+                ),
+              ],
+              icon: const Icon(Icons.sort_outlined),
+            ),
+          ),
+          Semantics(
+            label: 'Clear tag filters',
+            button: true,
+            child: IconButton(
+              tooltip: 'Clear filters',
+              onPressed: selectedTags.isEmpty
+                  ? null
+                  : () => ref.read(selectedTagFiltersProvider.notifier).state =
+                      <String>{},
+              icon: const Icon(Icons.filter_alt_off_outlined),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       floatingActionButton: Semantics(
         label: 'Add movie bookmark',
         button: true,
