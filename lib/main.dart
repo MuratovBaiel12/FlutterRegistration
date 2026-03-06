@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -17,13 +18,30 @@ import 'url_strategy.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Optimize: use path URL strategy for better web performance
   usePathUrlStrategy();
 
+  // Optimize: init Hive with better performance
   await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(10)) {
     Hive.registerAdapter(MovieModelAdapter());
   }
   await Hive.openBox<MovieModel>(MovieLocalDataSource.boxName);
+
+  // Optimize: set preferred orientations
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Optimize: set system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -32,49 +50,111 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
     final base = ThemeData(
       useMaterial3: true,
+      brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2563EB),
+        seedColor: const Color(0xFF6366F1), // Indigo-500
         brightness: brightness,
       ),
     );
 
     final colorScheme = base.colorScheme;
-    // 6-digit HEX colors (#RRGGBB).
-    final fillColor = brightness == Brightness.light
-        ? const Color(0x90F1F5F9).withValues(alpha: 140 / 255)
-        : const Color(0x001F2633);
+    final fillColor = isDark
+        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.6);
 
     return base.copyWith(
-      scaffoldBackgroundColor: colorScheme.surface,
-      appBarTheme: const AppBarTheme(
+      scaffoldBackgroundColor:
+          isDark ? const Color(0xFF0F0F1A) : const Color(0xFFF8FAFC),
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
       ),
       cardTheme: CardThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         clipBehavior: Clip.antiAlias,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.white.withValues(alpha: 0.7),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: fillColor,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 0,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        indicatorColor: colorScheme.primaryContainer.withValues(alpha: 0.8),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.primary,
+            );
+          }
+          return TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurfaceVariant,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: colorScheme.primary, size: 24);
+          }
+          return IconThemeData(color: colorScheme.onSurfaceVariant, size: 24);
+        }),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -92,11 +172,23 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Auth Demo',
+      title: 'Media Hub',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),
       themeMode: ThemeMode.system,
+      // Optimize: enable lazy loading for better performance
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            // Optimize: reduce text scale factor for consistent UI
+            textScaler: TextScaler.linear(
+              MediaQuery.of(context).textScaler.scale(1.0).clamp(0.8, 1.2),
+            ),
+          ),
+          child: child!,
+        );
+      },
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),

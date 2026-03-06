@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../widgets/app_logo.dart';
 import '../../application/providers.dart';
@@ -115,6 +116,31 @@ class _MediaScannerPageState extends ConsumerState<MediaScannerPage> {
                 ),
               ],
             ),
+            if (state.ocrText.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _OcrPreviewCard(
+                text: state.ocrText,
+                onCopy: () async {
+                  await Clipboard.setData(
+                    ClipboardData(text: state.ocrText),
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      const SnackBar(content: Text('Текст скопирован')),
+                    );
+                },
+                onUseForSearch: () {
+                  final guessed = _guessTitleForUi(state.ocrText);
+                  if (guessed.isEmpty) return;
+                  _queryController.text = guessed;
+                  _queryController.selection = TextSelection.collapsed(
+                    offset: guessed.length,
+                  );
+                },
+              ),
+            ],
             const SizedBox(height: 16),
             Text(
               'Поиск по названию',
@@ -192,6 +218,26 @@ class _MediaScannerPageState extends ConsumerState<MediaScannerPage> {
   }
 }
 
+String _guessTitleForUi(String ocrText) {
+  final cleaned = ocrText
+      .replaceAll(RegExp(r'[|]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
+  if (cleaned.isEmpty) return '';
+
+  final lines = ocrText
+      .split('\n')
+      .map((s) => s.trim())
+      .where((s) => s.length >= 3)
+      .toList();
+
+  if (lines.isEmpty) return cleaned;
+
+  lines.sort((a, b) => b.length.compareTo(a.length));
+  return lines.first;
+}
+
 class _ImageCard extends StatelessWidget {
   const _ImageCard({required this.bytes, required this.label});
 
@@ -243,6 +289,111 @@ class _ImageCard extends StatelessWidget {
                       )
                     : Image.memory(imageBytes, fit: BoxFit.cover),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OcrPreviewCard extends StatefulWidget {
+  const _OcrPreviewCard({
+    required this.text,
+    required this.onCopy,
+    required this.onUseForSearch,
+  });
+
+  final String text;
+  final VoidCallback onCopy;
+  final VoidCallback onUseForSearch;
+
+  @override
+  State<_OcrPreviewCard> createState() => _OcrPreviewCardState();
+}
+
+class _OcrPreviewCardState extends State<_OcrPreviewCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final text = widget.text.trim();
+    final preview = text.length > 160 ? '${text.substring(0, 160)}…' : text;
+
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.text_snippet_outlined,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Распознанный текст',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  tooltip: _expanded ? 'Свернуть' : 'Развернуть',
+                  icon: Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            AnimatedCrossFade(
+              crossFadeState: _expanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 160),
+              firstChild: Text(
+                preview,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              secondChild: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 220),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    text,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: widget.onUseForSearch,
+                  icon: const Icon(Icons.auto_fix_high_outlined),
+                  label: const Text('Вставить в поиск'),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: widget.onCopy,
+                  icon: const Icon(Icons.copy_all_outlined),
+                  label: const Text('Копировать'),
+                ),
+              ],
             ),
           ],
         ),
@@ -326,4 +477,3 @@ class _ResultTile extends StatelessWidget {
     );
   }
 }
-
