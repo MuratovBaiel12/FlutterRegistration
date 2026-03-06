@@ -141,18 +141,21 @@ class _GlassNavigationBar extends StatelessWidget {
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               destinations: [
                 _buildDestination(
+                  index: 0,
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home_rounded,
                   label: 'Главная',
                   colorScheme: colorScheme,
                 ),
                 _buildDestination(
+                  index: 1,
                   icon: Icons.document_scanner_outlined,
                   selectedIcon: Icons.document_scanner_rounded,
                   label: 'Сканер',
                   colorScheme: colorScheme,
                 ),
                 _buildDestination(
+                  index: 2,
                   icon: Icons.bookmark_outline_rounded,
                   selectedIcon: Icons.bookmark_rounded,
                   label: 'Закладки',
@@ -167,6 +170,7 @@ class _GlassNavigationBar extends StatelessWidget {
   }
 
   NavigationDestination _buildDestination({
+    required int index,
     required IconData icon,
     required IconData selectedIcon,
     required String label,
@@ -176,7 +180,7 @@ class _GlassNavigationBar extends StatelessWidget {
       icon: _AnimatedIcon(
         icon: icon,
         selectedIcon: selectedIcon,
-        isSelected: selectedIndex == _getIndex(label),
+        isSelected: selectedIndex == index,
         color: colorScheme.onSurfaceVariant,
         selectedColor: colorScheme.primary,
       ),
@@ -190,18 +194,6 @@ class _GlassNavigationBar extends StatelessWidget {
       label: label,
     );
   }
-
-  int _getIndex(String label) {
-    switch (label) {
-      case 'Главная':
-        return 0;
-      case 'Сканер':
-        return 1;
-      case 'Закладки':
-        return 2;
-      default:
-        return 0;
-    }
   }
 }
 
@@ -922,3 +914,4 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
+
